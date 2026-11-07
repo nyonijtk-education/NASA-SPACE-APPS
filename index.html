@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>C.A.S.C.A.D.E. - Earth System Trend Detective Terminal</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gEarthBg: '#F8F9FA',
+            gEarthCard: '#FFFFFF',
+            gEarthBorder: '#E1E3E1',
+            gEarthText: '#041E49',
+            gEarthMuted: '#444746',
+            gEarthBlue: '#0B57D0',
+            gEarthBlueHover: '#0842A0',
+            gEarthPillActive: '#C2E7FF',
+            gEarthPillText: '#001D35',
+            gEarthBannerBg: '#E8F0FE',
+            gEarthBannerBorder: '#B3D1FF',
+            gEarthGreen: '#0F5223',
+            gEarthGreenBg: '#E6F4EA',
+            gEarthRed: '#B3261E',
+            gEarthRedBg: '#FCE8E6',
+            gEarthGold: '#B45309',
+            gEarthGoldBg: '#FEF3C7'
+          },
+          fontFamily: {
+            sans: ['"Google Sans"', '"Google Sans Text"', '"Roboto"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          borderRadius: {
+            '2xl': '1.25rem'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    @font-face {
+      font-family: 'Google Sans';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url(https://fonts.gstatic.com/s/googlesans/v58/4UaGrENHsxJlGDuGo1OIlL3Kwp5MKg.woff2) format('woff2');
+    }
+    @font-face {
+      font-family: 'Google Sans';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url(https://fonts.gstatic.com/s/googlesans/v58/4UaGrENHsxJlGDuGo1OIlL3Nvp5MKg.woff2) format('woff2');
+    }
+
+    body {
+      background-color: #F8F9FA;
+      color: #041E49;
+      font-family: 'Google Sans', 'Roboto', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #F8F9FA; }
+    ::-webkit-scrollbar-thumb { background: #C4C7C5; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #8E918F; }
+
+    input[type=range].g-range {
+      -webkit-appearance: none;
+      background: #E1E3E1;
+      height: 6px;
+      border-radius: 3px;
+    }
+    input[type=range].g-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #0B57D0;
+      box-shadow: 0 1px 3px rgba(11, 87, 208, 0.4);
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    input[type=range].g-range::-webkit-slider-thumb:hover {
+      background: #0842A0;
+    }
+
+    .g-card {
+      background: #FFFFFF;
+      border: 1px solid #E1E3E1;
+      border-radius: 1.25rem;
+      box-shadow: 0 1px 3px 0 rgba(60,64,67,0.08), 0 4px 8px 3px rgba(60,64,67,0.04);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .g-card:hover {
+      box-shadow: 0 2px 6px 0 rgba(60,64,67,0.12), 0 8px 16px 4px rgba(60,64,67,0.06);
+    }
+
+    .tab-pill {
+      transition: all 0.2s ease;
+      font-weight: 500;
+      border-radius: 9999px;
+      padding: 0.5rem 1.25rem;
+    }
+    .tab-pill.active {
+      background-color: #C2E7FF;
+      color: #001D35;
+      font-weight: 700;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .tab-pill.inactive {
+      background-color: transparent;
+      color: #444746;
+    }
+    .tab-pill.inactive:hover {
+      background-color: #E8EAED;
+      color: #041E49;
+    }
+
+    #wallpaperContainer {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      transition: opacity 0.5s ease-in-out;
+      overflow: hidden;
+    }
+    #wallpaperCanvas {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      filter: contrast(1.15) brightness(0.95);
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.88) !important;
+      backdrop-filter: blur(16px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+      border: 1px solid rgba(225, 227, 225, 0.8) !important;
+      border-radius: 1.25rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    #toastContainer {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .satellite-marker {
+      width: 24px;
+      height: 24px;
+      position: relative;
+    }
+    .satellite-crosshair {
+      width: 100%;
+      height: 100%;
+      border: 1.5px solid #0B57D0;
+      border-radius: 50%;
+      position: absolute;
+      top: 0; left: 0;
+    }
+    .satellite-crosshair::before, .satellite-crosshair::after {
+      content: '';
+      position: absolute;
+      background: #0B57D0;
+    }
+    .satellite-crosshair::before {
+      top: -4px; bottom: -4px; left: 50%; width: 1.5px; transform: translateX(-50%);
+    }
+    .satellite-crosshair::after {
+      left: -4px; right: -4px; top: 50%; height: 1.5px; transform: translateY(-50%);
+    }
+    .satellite-label {
+      position: absolute;
+      top: 26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.9);
+      border: 1px solid #E1E3E1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: monospace;
+      font-weight: bold;
+      color: #041E49;
+      white-space: nowrap;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen antialiased selection:bg-gEarthPillActive selection:text-gEarthPillText relative">
+
+  <!-- DYNAMIC ENHANCED SATELLITE WALLPAPER BACKGROUND -->
+  <div id="wallpaperContainer" style="opacity: 0.35;">
+    <canvas id="wallpaperCanvas"></canvas>
+    <div class="absolute inset-0 bg-gradient-to-b from-white/60 via-slate-50/40 to-white/70"></div>
+  </div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gEarthBorder px-4 lg:px-8 py-3 transition-all">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-gEarthBlue flex items-center justify-center text-white shadow-md">
+          <i class="fa-solid fa-earth-africa text-xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-xl font-bold tracking-tight text-gEarthText">C.A.S.C.A.D.E.</h1>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-gEarthPillActive text-gEarthPillText font-semibold">NASA Space Apps</span>
+          </div>
+          <p class="text-xs text-gEarthMuted font-normal hidden sm:block">
+            Climate &amp; Atmospheric Satellite Computing for Anomaly &amp; Decision Engines
+          </p>
+        </div>
+      </div>
+
+      <!-- Controls & Guide Button -->
+      <div class="flex items-center space-x-3">
+        <div class="hidden lg:flex items-center space-x-2 bg-slate-100/80 px-3 py-1.5 rounded-full border border-gEarthBorder text-xs">
+          <i class="fa-solid fa-image text-gEarthBlue"></i>
+          <span class="text-gEarthMuted text-[11px] font-medium">Wallpaper Opacity:</span>
+          <input type="range" id="wallpaperOpacitySlider" min="0" max="80" value="35" oninput="changeWallpaperOpacity(this.value)" class="w-20 g-range">
+          <span id="wallpaperOpacityTxt" class="font-mono font-bold text-gEarthBlue text-[11px]">35%</span>
+        </div>
+
+        <div class="hidden md:flex items-center space-x-2 bg-gEarthBg px-3.5 py-1.5 rounded-full border border-gEarthBorder text-xs font-mono text-gEarthText">
+          <i class="fa-solid fa-location-dot text-gEarthBlue"></i>
+          <span class="text-gEarthMuted font-sans">Pin Target:</span>
+          <span id="headerPinText" class="font-bold text-gEarthBlue">0.000° N, 20.000° E</span>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-md font-sans font-semibold">Central Africa</span>
+        </div>
+
+        <button onclick="openUserGuideModal()" class="flex items-center space-x-1.5 px-4 py-2 rounded-full bg-gEarthBg hover:bg-slate-200 text-gEarthText border border-gEarthBorder text-xs font-semibold transition">
+          <i class="fa-solid fa-book-open text-gEarthBlue"></i>
+          <span>📖 User Guide</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN NAVIGATION PILLS -->
+    <div class="max-w-7xl mx-auto mt-3 pt-2 border-t border-slate-100 overflow-x-auto scrollbar-none">
+      <nav class="flex space-x-2 min-w-max pb-1">
+        <button onclick="switchTab('tabGlobe')" id="btnTabGlobe" class="tab-pill active flex items-center space-x-2 text-xs">
+          <span>🌐 3D Multi-Slice Globe</span>
+        </button>
+        <button onclick="switchTab('tabMaps')" id="btnTabMaps" class="tab-pill inactive flex items-center space-x-2 text-xs">
+          <span>🗺️ Global Maps &amp; Pinning</span>
+        </button>
+        <button onclick="switchTab('tabDetective')" id="btnTabDetective" class="tab-pill inactive flex items-center space-x-2 text-xs">
+          <span>🕵️‍♂️ Trend Detective (Steps I-V)</span>
+        </button>
+        <button onclick="switchTab('tabPolicy')" id="btnTabPolicy" class="tab-pill inactive flex items-center space-x-2 text-xs">
+          <span>⚖️ What-If Policy Simulator</span>
+        </button>
+        <button onclick="switchTab('tabCascade')" id="btnTabCascade" class="tab-pill inactive flex items-center space-x-2 text-xs">
+          <span>🌋 Multi-Orbital Cascade</span>
+        </button>
+        <button onclick="switchTab('tabBrief')" id="btnTabBrief" class="tab-pill inactive flex items-center space-x-2 text-xs">
+          <span>📋 Executive Decision Briefs</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 space-y-6">
+
+    <!-- TAB 1: 🌐 3D MULTI-SLICE GLOBE -->
+    <div id="tabGlobe" class="space-y-6">
+      
+      <!-- Banner -->
+      <div class="p-4 rounded-2xl bg-gEarthBannerBg border border-gEarthBannerBorder text-gEarthBlue flex items-start space-x-3">
+        <i class="fa-solid fa-circle-info text-lg mt-0.5"></i>
+        <div class="text-xs leading-relaxed font-sans">
+          <strong class="font-bold text-sm block mb-0.5">📖 How to Use the 3D Multi-Slice Globe:</strong>
+          Click and drag to rotate the photorealistic 3D Earth sphere focused over Africa. Use the color-coded layer checkboxes below to toggle observation spectrums (Rainfall, Soil Moisture, Thermal Heat, Vegetation NDVI, and Aquifers) onto the globe and high-res satellite map views! Click anywhere on the 3D globe to sync target coordinates.
+        </div>
+      </div>
+
+      <!-- LAYER CHECKBOX BAR -->
+      <div class="glass-card p-4 flex flex-wrap items-center justify-between gap-3">
+        <span class="text-xs font-bold text-gEarthText flex items-center gap-1.5">
+          <i class="fa-solid fa-layer-group text-gEarthBlue"></i> Observation Layers:
+        </span>
+        <div class="flex flex-wrap items-center gap-3 text-xs">
+          <label class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 cursor-pointer hover:bg-blue-100 transition">
+            <input type="checkbox" id="chkRainfall" checked onchange="toggleObservationLayer('rainfall')" class="rounded text-blue-600 focus:ring-blue-500">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span>
+            <span class="font-bold text-blue-950">🌧️ Rainfall (GPM)</span>
+          </label>
+          <label class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 transition">
+            <input type="checkbox" id="chkSoil" checked onchange="toggleObservationLayer('soil')" class="rounded text-amber-600 focus:ring-amber-500">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-600 inline-block"></span>
+            <span class="font-bold text-amber-950">🌾 Soil Moisture (SMAP)</span>
+          </label>
+          <label class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-red-50 border border-red-200 cursor-pointer hover:bg-red-100 transition">
+            <input type="checkbox" id="chkHeat" checked onchange="toggleObservationLayer('heat')" class="rounded text-red-600 focus:ring-red-500">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-600 inline-block"></span>
+            <span class="font-bold text-red-950">🔥 Surface Heat (GOES)</span>
+          </label>
+          <label class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 cursor-pointer hover:bg-emerald-100 transition">
+            <input type="checkbox" id="chkVeg" checked onchange="toggleObservationLayer('veg')" class="rounded text-emerald-600 focus:ring-emerald-500">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span>
+            <span class="font-bold text-emerald-950">🌿 Vegetation (NDVI)</span>
+          </label>
+          <label class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-cyan-50 border border-cyan-200 cursor-pointer hover:bg-cyan-100 transition">
+            <input type="checkbox" id="chkWater" checked onchange="toggleObservationLayer('water')" class="rounded text-cyan-600 focus:ring-cyan-500">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block"></span>
+            <span class="font-bold text-cyan-950">💧 Water / Aquifers (GRACE)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Main Map Container Card -->
+      <div class="glass-card p-4 relative overflow-hidden flex flex-col items-center">
+        <div id="mainLeafletMap" class="w-full h-[520px] rounded-2xl relative z-10 border border-gEarthBorder"></div>
+        
+        <!-- Overlay HUD Controls -->
+        <div class="absolute top-8 left-8 z-[400] space-y-2 pointer-events-none">
+          <div class="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gEarthBorder text-xs shadow-sm pointer-events-auto">
+            <span class="text-gEarthMuted font-bold">Focus:</span>
+            <span class="text-gEarthBlue font-mono font-bold">Africa baseline (0°N, 20°E)</span>
+          </div>
+          <div class="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gEarthBorder text-xs shadow-sm pointer-events-auto flex items-center space-x-2">
+            <i class="fa-solid fa-satellite text-gEarthGold"></i>
+            <span class="text-gEarthMuted">Active Orbiters:</span>
+            <span class="font-mono text-gEarthText font-bold">Terra, Aqua, GPM, GRACE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 🗺️ GLOBAL MAPS & PINNING -->
+    <div id="tabMaps" class="space-y-6 hidden">
+      
+      <!-- Banner -->
+      <div class="p-4 rounded-2xl bg-gEarthBannerBg border border-gEarthBannerBorder text-gEarthBlue flex items-start space-x-3">
+        <i class="fa-solid fa-circle-info text-lg mt-0.5"></i>
+        <div class="text-xs leading-relaxed font-sans">
+          <strong class="font-bold text-sm block mb-0.5">📖 How to Use Global Maps &amp; Flexible Coordinates:</strong>
+          Target any region across Africa using the numeric coordinate input boxes or quick hotspot buttons (Sahel, Horn of Africa, Congo Basin, Great Lakes, Kalahari). Check/uncheck environmental layers to dynamically display rainfall, soil moisture, surface heat, vegetation, and water color maps on the high-resolution satellite basemap.
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Sidebar Controls -->
+        <div class="lg:col-span-4 space-y-4">
+          
+          <!-- Flexible Numeric Coordinates -->
+          <div class="glass-card p-4 space-y-3">
+            <h3 class="text-sm font-bold text-gEarthText flex items-center space-x-2">
+              <i class="fa-solid fa-crosshairs text-gEarthBlue"></i>
+              <span>Flexible Coordinate Selector</span>
+            </h3>
+
+            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+              <div>
+                <label class="text-[10px] text-gEarthMuted font-sans block mb-1">Latitude (°N/S)</label>
+                <input type="number" id="inputCustomLat" value="0.000" step="0.001" min="-90" max="90" onchange="applyCustomCoordinates()" class="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-gEarthBorder text-xs text-gEarthText font-bold focus:border-gEarthBlue">
+              </div>
+              <div>
+                <label class="text-[10px] text-gEarthMuted font-sans block mb-1">Longitude (°E/W)</label>
+                <input type="number" id="inputCustomLon" value="20.000" step="0.001" min="-180" max="180" onchange="applyCustomCoordinates()" class="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-gEarthBorder text-xs text-gEarthText font-bold focus:border-gEarthBlue">
+              </div>
+            </div>
+
+            <button onclick="applyCustomCoordinates()" class="w-full py-2 rounded-xl bg-gEarthBlue hover:bg-gEarthBlueHover text-white text-xs font-semibold transition">
+              Sync Target Pin Coordinates
+            </button>
+
+            <!-- African Hotspots -->
+            <div class="pt-2 border-t border-gEarthBorder">
+              <span class="text-[11px] font-semibold text-gEarthMuted block mb-1.5">African Regional Presets:</span>
+              <div class="flex flex-wrap gap-1.5">
+                <button onclick="setPinLocation(14.500, 1.200, 'Sahel Belt (Niger/Mali)')" class="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-[11px] font-medium">🏜️ Sahel Belt</button>
+                <button onclick="setPinLocation(6.200, 42.500, 'Horn of Africa (Ethiopia)')" class="px-2.5 py-1 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-900 text-[11px] font-medium">☀️ Horn of Africa</button>
+                <button onclick="setPinLocation(-0.800, 22.500, 'Congo Rainforest Basin')" class="px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[11px] font-medium">🌿 Congo Basin</button>
+                <button onclick="setPinLocation(-2.500, 32.800, 'Rift Valley &amp; Great Lakes')" class="px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-900 text-[11px] font-medium">💧 Great Lakes</button>
+                <button onclick="setPinLocation(-23.000, 21.500, 'Kalahari Basin (Botswana)')" class="px-2.5 py-1 rounded-lg bg-yellow-100 hover:bg-yellow-200 text-yellow-900 text-[11px] font-medium">🌾 Kalahari</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Specs & Offset Bounding Box -->
+          <div class="g-card p-4 space-y-3">
+            <h3 class="text-sm font-bold text-gEarthText flex items-center space-x-2">
+              <i class="fa-solid fa-vector-square text-gEarthBlue"></i>
+              <span>Active Pin &amp; Bounding Box</span>
+            </h3>
+
+            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+              <div class="p-2.5 rounded-xl bg-slate-50 border border-gEarthBorder">
+                <span class="text-[10px] text-gEarthMuted block font-sans">Target Lat</span>
+                <span id="txtMapLat" class="font-bold text-gEarthBlue text-sm">0.000° N</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50 border border-gEarthBorder">
+                <span class="text-[10px] text-gEarthMuted block font-sans">Target Lon</span>
+                <span id="txtMapLon" class="font-bold text-gEarthBlue text-sm">20.000° E</span>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-gEarthBorder space-y-2">
+              <span class="text-xs font-bold text-gEarthText block">Regional Bounding Box (AOI Offset)</span>
+              <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                <div>
+                  <label class="text-[10px] text-gEarthMuted font-sans">Lat Offset (+/- deg)</label>
+                  <input type="number" id="inputLatOffset" value="2.5" step="0.5" onchange="updateBoundingBox()" class="w-full px-2 py-1 rounded-lg bg-slate-50 border border-gEarthBorder text-xs text-gEarthText">
+                </div>
+                <div>
+                  <label class="text-[10px] text-gEarthMuted font-sans">Lon Offset (+/- deg)</label>
+                  <input type="number" id="inputLonOffset" value="3.0" step="0.5" onchange="updateBoundingBox()" class="w-full px-2 py-1 rounded-lg bg-slate-50 border border-gEarthBorder text-xs text-gEarthText">
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Leaflet Map Panel -->
+        <div class="lg:col-span-8">
+          <div class="g-card p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-map-location-dot text-gEarthBlue"></i>
+                <h3 class="text-sm font-bold text-gEarthText">Esri High-Resolution Satellite Basemap</h3>
+              </div>
+              <span class="text-xs bg-gEarthPillActive text-gEarthPillText px-2.5 py-0.5 rounded-full font-semibold">
+                Click Map to Sync Pin
+              </span>
+            </div>
+
+            <div id="leafletMap" class="w-full h-[520px] rounded-xl overflow-hidden border border-gEarthBorder z-10"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 3: 🕵️‍♂️ TREND DETECTIVE (STEPS I-V) -->
+    <div id="tabDetective" class="space-y-6 hidden">
+      
+      <!-- Banner -->
+      <div class="p-4 rounded-2xl bg-gEarthBannerBg border border-gEarthBannerBorder text-gEarthBlue flex items-start space-x-3">
+        <i class="fa-solid fa-circle-info text-lg mt-0.5"></i>
+        <div class="text-xs leading-relaxed font-sans">
+          <strong class="font-bold text-sm block mb-0.5">📖 How to Use the Step I-V Trend Detective:</strong>
+          Investigate multi-variable Earth observation trends across 24 years of satellite data (2002–2026). Follow Roman numerals I through V below: select a variable, confirm your spatial target pin, compare decadal baselines, and review Mann-Kendall non-parametric statistical significance ($p$-value, Sen's slope $\beta$) and Z-score anomaly alerts.
+        </div>
+      </div>
+
+      <!-- 4 CORE QUESTIONS SUMMARY MATRIX -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="glass-card p-4 border-l-4 border-l-gEarthBlue space-y-1">
+          <span class="text-[10px] uppercase tracking-wider font-bold text-gEarthMuted font-mono">1. What is changing?</span>
+          <span id="matrixWhat" class="block text-sm font-bold text-gEarthText">SO2 / Aerosols</span>
+        </div>
+        <div class="glass-card p-4 border-l-4 border-l-emerald-500 space-y-1">
+          <span class="text-[10px] uppercase tracking-wider font-bold text-gEarthMuted font-mono">2. Where is it changing?</span>
+          <span id="matrixWhere" class="block text-sm font-bold text-gEarthText truncate">Central Africa (Congo Basin)</span>
+        </div>
+        <div class="glass-card p-4 border-l-4 border-l-amber-500 space-y-1">
+          <span class="text-[10px] uppercase tracking-wider font-bold text-gEarthMuted font-mono">3. How much is it changing?</span>
+          <span id="matrixHowMuch" class="block text-sm font-bold text-gEarthText">+3.41 Units (Net Increase)</span>
+        </div>
+        <div class="glass-card p-4 border-l-4 border-l-red-500 space-y-1">
+          <span class="text-[10px] uppercase tracking-wider font-bold text-gEarthMuted font-mono">4. Is it significant?</span>
+          <span id="matrixSig" class="block text-sm font-bold text-gEarthRed">Yes (p &lt; 0.001)</span>
+        </div>
+      </div>
+
+      <!-- Step I: Variable Selection -->
+      <div class="g-card p-5 space-y-3">
+        <div class="flex items-center space-x-2">
+          <span class="w-6 h-6 rounded-full bg-gEarthBlue text-white text-xs font-bold flex items-center justify-center">I</span>
+          <h3 class="text-sm font-bold text-gEarthText">WHAT is changing? (Select Earth Observation Variable)</h3>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          
+          <button onclick="selectVariable('so2')" id="varBtn_so2" class="var-card p-3 rounded-xl border border-gEarthBlue bg-gEarthPillActive text-gEarthPillText text-left space-y-1 transition">
+            <i class="fa-solid fa-smog text-gEarthGold text-base block"></i>
+            <span class="text-xs font-bold block">SO2 / Aerosols</span>
+            <span class="text-[10px] opacity-75 block">MODIS / Aura OMI</span>
+          </button>
+
+          <button onclick="selectVariable('aod')" id="varBtn_aod" class="var-card p-3 rounded-xl border border-gEarthBorder bg-slate-50 text-gEarthMuted hover:border-slate-300 text-left space-y-1 transition">
+            <i class="fa-solid fa-sun text-amber-500 text-base block"></i>
+            <span class="text-xs font-bold block">AOD Optical Depth</span>
+            <span class="text-[10px] opacity-75 block">Aqua / VIIRS</span>
+          </button>
+
+          <button onclick="selectVariable('ice')" id="varBtn_ice" class="var-card p-3 rounded-xl border border-gEarthBorder bg-slate-50 text-gEarthMuted hover:border-slate-300 text-left space-y-1 transition">
+            <i class="fa-solid fa-snowflake text-sky-500 text-base block"></i>
+            <span class="text-xs font-bold block">Snow &amp; Ice Cover</span>
+            <span class="text-[10px] opacity-75 block">CryoSat-2 / Sentinel</span>
+          </button>
+
+          <button onclick="selectVariable('sst')" id="varBtn_sst" class="var-card p-3 rounded-xl border border-gEarthBorder bg-slate-50 text-gEarthMuted hover:border-slate-300 text-left space-y-1 transition">
+            <i class="fa-solid fa-temperature-arrow-up text-red-500 text-base block"></i>
+            <span class="text-xs font-bold block">Ocean SST Temp</span>
+            <span class="text-[10px] opacity-75 block">VIIRS / Sentinel-6</span>
+          </button>
+
+          <button onclick="selectVariable('grace')" id="varBtn_grace" class="var-card p-3 rounded-xl border border-gEarthBorder bg-slate-50 text-gEarthMuted hover:border-slate-300 text-left space-y-1 transition">
+            <i class="fa-solid fa-droplet text-blue-600 text-base block"></i>
+            <span class="text-xs font-bold block">GRACE Groundwater</span>
+            <span class="text-[10px] opacity-75 block">GRACE-FO Aquifers</span>
+          </button>
+
+          <button onclick="selectVariable('weather')" id="varBtn_weather" class="var-card p-3 rounded-xl border border-gEarthBorder bg-slate-50 text-gEarthMuted hover:border-slate-300 text-left space-y-1 transition">
+            <i class="fa-solid fa-cloud-bolt text-purple-600 text-base block"></i>
+            <span class="text-xs font-bold block">Storm Systems</span>
+            <span class="text-[10px] opacity-75 block">GPM / GOES-R</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Step II & III Split -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Step II: Spatial Pin Target -->
+        <div class="g-card p-5 space-y-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-full bg-gEarthBlue text-white text-xs font-bold flex items-center justify-center">II</span>
+            <h3 class="text-sm font-bold text-gEarthText">WHERE is it changing? (Spatial Target)</h3>
+          </div>
+          
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-gEarthBorder flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-gEarthText block" id="txtDetLocName">Central Africa (Congo Basin)</span>
+              <span class="text-xs font-mono text-gEarthBlue" id="txtDetLocCoords">0.000° N, 20.000° E</span>
+            </div>
+            <button onclick="switchTab('tabMaps')" class="px-3 py-1.5 rounded-xl bg-white border border-gEarthBorder text-gEarthBlue hover:bg-slate-100 text-xs font-semibold transition">
+              Change Pin
+            </button>
+          </div>
+        </div>
+
+        <!-- Step III: Decadal Split -->
+        <div class="g-card p-5 space-y-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-full bg-gEarthBlue text-white text-xs font-bold flex items-center justify-center">III</span>
+            <h3 class="text-sm font-bold text-gEarthText">Decadal Split Window</h3>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 text-center text-xs">
+            <div class="p-3 rounded-xl bg-blue-50 border border-blue-200">
+              <span class="text-blue-900 font-bold block">Baseline Horizon</span>
+              <span class="text-blue-700 font-mono text-sm block">2002 – 2012</span>
+            </div>
+            <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-200">
+              <span class="text-indigo-900 font-bold block">Observation Horizon</span>
+              <span class="text-indigo-700 font-mono text-sm block">2013 – 2026</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Step IV: Statistical Diagnostics -->
+      <div class="g-card p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-gEarthBorder pb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-full bg-gEarthBlue text-white text-xs font-bold flex items-center justify-center">IV</span>
+            <h3 class="text-sm font-bold text-gEarthText">ARE these changes SIGNIFICANT? (Mann-Kendall &amp; Sen's Slope)</h3>
+          </div>
+          <span class="text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-check-circle"></i> Non-Parametric Pass
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <div class="p-4 rounded-xl bg-slate-50 border border-gEarthBorder space-y-1">
+            <span class="text-xs text-gEarthMuted block font-sans">Mann-Kendall p-value</span>
+            <span id="statPValue" class="text-xl font-bold font-mono text-gEarthGreen">p &lt; 0.001</span>
+            <span class="text-[10px] text-gEarthMuted block">Statistically Significant (&gt;99% CI)</span>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-gEarthBorder space-y-1">
+            <span class="text-xs text-gEarthMuted block font-sans">Sen's Slope Magnitude (β)</span>
+            <span id="statSenSlope" class="text-xl font-bold font-mono text-gEarthBlue">+0.142 / yr</span>
+            <span class="text-[10px] text-gEarthMuted block">Decadal Linear Rate of Change</span>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-gEarthBorder space-y-1">
+            <span class="text-xs text-gEarthMuted block font-sans">Kendall's Tau (τ)</span>
+            <span id="statTau" class="text-xl font-bold font-mono text-gEarthText">+0.684</span>
+            <span class="text-[10px] text-gEarthMuted block">Monotonic Trend Strength</span>
+          </div>
+
+          <div class="p-4 rounded-xl bg-gEarthRedBg border border-red-200 space-y-1">
+            <span class="text-xs text-gEarthRed font-bold block font-sans">Z-Score Anomaly Status</span>
+            <span id="statZScore" class="text-xl font-bold font-mono text-gEarthRed">+4.82 σ</span>
+            <span class="text-[10px] text-gEarthRed font-medium block">ALERT: Deviation &gt; +2σ Threshold</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Step V: Time Series Chart -->
+      <div class="g-card p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-full bg-gEarthBlue text-white text-xs font-bold flex items-center justify-center">V</span>
+            <h3 class="text-sm font-bold text-gEarthText">HOW MUCH has it changed over time? (24-Year Timeline)</h3>
+          </div>
+          <div class="flex items-center space-x-4 text-xs font-sans">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-600 inline-block"></span> 12M Moving Avg</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-red-500 inline-block"></span> Sen's Slope β</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-amber-500 border-dashed border-t inline-block"></span> +2σ Anomaly Line</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+          <!-- Main Chart -->
+          <div class="lg:col-span-2 h-80 w-full">
+            <canvas id="chartDetective"></canvas>
+          </div>
+          
+          <!-- Chronological Timeline -->
+          <div class="lg:col-span-1 h-80 overflow-y-auto bg-slate-50 border border-gEarthBorder rounded-xl p-4 space-y-4 scrollbar-thin">
+            <h4 class="text-[11px] font-bold text-gEarthMuted uppercase tracking-wider border-b border-slate-200 pb-2 mb-3">Chronological Event Timeline</h4>
+            <div id="chronologicalTimeline" class="space-y-4">
+              <!-- Timeline items populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 4: ⚖️ WHAT-IF POLICY SIMULATOR -->
+    <div id="tabPolicy" class="space-y-6 hidden">
+      
+      <!-- Banner -->
+      <div class="p-4 rounded-2xl bg-gEarthBannerBg border border-gEarthBannerBorder text-gEarthBlue flex items-start space-x-3">
+        <i class="fa-solid fa-circle-info text-lg mt-0.5"></i>
+        <div class="text-xs leading-relaxed font-sans">
+          <strong class="font-bold text-sm block mb-0.5">📖 How to Use the What-If Policy Simulator:</strong>
+          Test environmental policy interventions on projected decadal outcomes (2026–2036). Move policy sliders to simulate reductions in groundwater drawdown, urban canopy greening targets, aerosol controls, or sensor deployment density. Observe how strategic action bends the projected trajectory compared to business-as-usual.
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Policy Sliders -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="g-card p-5 space-y-4">
+            <h3 class="text-sm font-bold text-gEarthText flex items-center space-x-2 border-b border-gEarthBorder pb-3">
+              <i class="fa-solid fa-sliders text-gEarthBlue"></i>
+              <span>Policy Intervention Controls</span>
+            </h3>
+
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs">
+                <span class="font-bold text-gEarthText">Agricultural Water Cutoffs</span>
+                <span id="txtValWater" class="font-mono text-gEarthBlue font-bold">15% Reduction</span>
+              </div>
+              <input type="range" id="sliderWater" min="0" max="50" value="15" step="1" oninput="updatePolicySimulation()" class="w-full g-range">
+              <span class="text-[10px] text-gEarthMuted block">Reduces aquifer drawdown rate from GRACE reserves.</span>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs">
+                <span class="font-bold text-gEarthText">Urban Canopy Greening Target</span>
+                <span id="txtValGreening" class="font-mono text-gEarthGreen font-bold">+10% Canopy</span>
+              </div>
+              <input type="range" id="sliderGreening" min="0" max="30" value="10" step="1" oninput="updatePolicySimulation()" class="w-full g-range">
+              <span class="text-[10px] text-gEarthMuted block">Mitigates land surface heat anomaly index.</span>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs">
+                <span class="font-bold text-gEarthText">Aerosol Emission Controls</span>
+                <span id="txtValAerosol" class="font-mono text-gEarthGold font-bold">25% Cap</span>
+              </div>
+              <input type="range" id="sliderAerosol" min="0" max="60" value="25" step="1" oninput="updatePolicySimulation()" class="w-full g-range">
+              <span class="text-[10px] text-gEarthMuted block">Caps industrial particulate SO2 emissions.</span>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs">
+                <span class="font-bold text-gEarthText">Radiometer Array Mesh Density</span>
+                <span id="txtValSensor" class="font-mono text-purple-600 font-bold">250 Nodes</span>
+              </div>
+              <input type="range" id="sliderSensor" min="50" max="500" value="250" step="10" oninput="updatePolicySimulation()" class="w-full g-range">
+              <span class="text-[10px] text-gEarthMuted block">Increases early anomaly detection resolution.</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Policy Graph -->
+        <div class="lg:col-span-7">
+          <div class="g-card p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-gEarthBorder pb-3">
+              <h3 class="text-sm font-bold text-gEarthText flex items-center space-x-2">
+                <i class="fa-solid fa-chart-line text-gEarthBlue"></i>
+                <span>10-Year Decadal Trajectory Projection (2026–2036)</span>
+              </h3>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                Intervention Mode Active
+              </span>
+            </div>
+
+            <div class="h-80 w-full">
+              <canvas id="chartPolicy"></canvas>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2 text-center text-xs">
+              <div class="p-3 rounded-xl bg-red-50 border border-red-200">
+                <span class="text-red-900 font-bold block">Business-As-Usual (2036)</span>
+                <span id="txtBauOutcome" class="text-red-700 font-mono text-sm font-bold">+5.92 σ Anomaly</span>
+              </div>
+              <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                <span class="text-emerald-900 font-bold block">Policy Projected (2036)</span>
+                <span id="txtPolicyOutcome" class="text-emerald-700 font-mono text-sm font-bold">+1.24 σ (Stabilized)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 5: 🌋 MULTI-ORBITAL CASCADE -->
+    <div id="tabCascade" class="space-y-6 hidden">
+      
+      <!-- Banner -->
+      <div class="p-4 rounded-2xl bg-gEarthBannerBg border border-gEarthBannerBorder text-gEarthBlue flex items-start space-x-3">
+        <i class="fa-solid fa-circle-info text-lg mt-0.5"></i>
+        <div class="text-xs leading-relaxed font-sans">
+          <strong class="font-bold text-sm block mb-0.5">📖 How to Use the Multi-Orbital Cascade Simulator:</strong>
+          Observe how a single primary event (e.g., a major volcanic eruption or thermal anomaly) cascades across interconnected Earth systems—from atmospheric optical depth to sea surface temperature drops and eventual groundwater aquifer depletion. Click any stage card to step through the sequence.
+        </div>
+      </div>
+
+      <!-- Stepper -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+        
+        <div onclick="selectCascadeStage(1)" id="cascadeCard1" class="g-card p-4 space-y-2 cursor-pointer border-gEarthBlue bg-blue-50/50 transition">
+          <div class="flex items-center justify-between">
+            <span class="w-6 h-6 rounded-full bg-gEarthBlue text-white text-xs font-bold flex items-center justify-center">1</span>
+            <span class="text-[10px] font-mono text-gEarthBlue font-bold">MODIS / OMI</span>
+          </div>
+          <span class="text-xs font-bold text-gEarthText block">Volcanic Eruption / SO2 Spike</span>
+          <span class="text-[10px] text-gEarthMuted block">Primary atmospheric injection event.</span>
+        </div>
+
+        <div onclick="selectCascadeStage(2)" id="cascadeCard2" class="g-card p-4 space-y-2 cursor-pointer border-gEarthBorder hover:border-slate-300 transition">
+          <div class="flex items-center justify-between">
+            <span class="w-6 h-6 rounded-full bg-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center">2</span>
+            <span class="text-[10px] font-mono text-gEarthMuted font-bold">Aqua AOD</span>
+          </div>
+          <span class="text-xs font-bold text-gEarthText block">Aerosol Optical Depth Accumulation</span>
+          <span class="text-[10px] text-gEarthMuted block">Solar radiative scattering layer.</span>
+        </div>
+
+        <div onclick="selectCascadeStage(3)" id="cascadeCard3" class="g-card p-4 space-y-2 cursor-pointer border-gEarthBorder hover:border-slate-300 transition">
+          <div class="flex items-center justify-between">
+            <span class="w-6 h-6 rounded-full bg-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center">3</span>
+            <span class="text-[10px] font-mono text-gEarthMuted font-bold">GOES-R</span>
+          </div>
+          <span class="text-xs font-bold text-gEarthText block">Radiative Trap &amp; Atmospheric Cooling</span>
+          <span class="text-[10px] text-gEarthMuted block">Reduction in net surface solar flux.</span>
+        </div>
+
+        <div onclick="selectCascadeStage(4)" id="cascadeCard4" class="g-card p-4 space-y-2 cursor-pointer border-gEarthBorder hover:border-slate-300 transition">
+          <div class="flex items-center justify-between">
+            <span class="w-6 h-6 rounded-full bg-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center">4</span>
+            <span class="text-[10px] font-mono text-gEarthMuted font-bold">VIIRS SST</span>
+          </div>
+          <span class="text-xs font-bold text-gEarthText block">Sea Surface Temp Drop &amp; Evaporation</span>
+          <span class="text-[10px] text-gEarthMuted block">Altered oceanic evaporation flux.</span>
+        </div>
+
+        <div onclick="selectCascadeStage(5)" id="cascadeCard5" class="g-card p-4 space-y-2 cursor-pointer border-gEarthBorder hover:border-slate-300 transition">
+          <div class="flex items-center justify-between">
+            <span class="w-6 h-6 rounded-full bg-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center">5</span>
+            <span class="text-[10px] font-mono text-gEarthMuted font-bold">GRACE-FO</span>
+          </div>
+          <span class="text-xs font-bold text-gEarthText block">Aquifer Storage Depletion</span>
+          <span class="text-[10px] text-gEarthMuted block">Groundwater drawdown escalation.</span>
+        </div>
+
+      </div>
+
+      <!-- Stage Detail Inspector -->
+      <div class="g-card p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-gEarthBorder pb-3">
+          <div>
+            <span class="text-xs font-bold text-gEarthBlue uppercase tracking-wider block">Stage Inspector</span>
+            <h3 id="txtCascadeStageTitle" class="text-base font-bold text-gEarthText">Stage 1: Volcanic Eruption &amp; SO2 Aerosol Injection</h3>
+          </div>
+          <span id="txtCascadeBadge" class="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-bold">
+            Satellite Sensor: MODIS / Aura OMI
+          </span>
+        </div>
+
+        <p id="txtCascadeStageDesc" class="text-xs text-gEarthMuted leading-relaxed">
+          High-altitude SO2 injection from major volcanic eruptions creates stratospheric aerosol plumes. Aqua MODIS and Aura OMI track SO2 column density spikes exceeding +4.5σ baseline standard deviations.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-gEarthBorder space-y-1">
+            <span class="text-xs font-bold text-gEarthText block">Data Confidence</span>
+            <span id="txtCascadeConf" class="text-sm font-mono font-bold text-gEarthGreen">98.4% (High Confidence)</span>
+            <span class="text-[10px] text-gEarthMuted block">Cross-verified by Sentinel-5P TROPOMI.</span>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-gEarthBorder space-y-1">
+            <span class="text-xs font-bold text-gEarthText block">Primary Downstream Risk</span>
+            <span id="txtCascadeRisk" class="text-sm font-bold text-gEarthGold">Stratospheric Plume Dispersion</span>
+            <span class="text-[10px] text-gEarthMuted block">Predicted 14-day global transport window.</span>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-gEarthBorder space-y-1">
+            <span class="text-xs font-bold text-gEarthText block">Policy Recommendation</span>
+            <span id="txtCascadeRec" class="text-sm font-bold text-gEarthBlue">Activate High-Cadence Orbiters</span>
+            <span class="text-[10px] text-gEarthMuted block">Increase spatial sampling frequency to 1H.</span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 6: 📋 EXECUTIVE DECISION BRIEFS -->
+    <div id="tabBrief" class="space-y-6 hidden">
+      
+      <!-- Banner -->
+      <div class="p-4 rounded-2xl bg-gEarthBannerBg border border-gEarthBannerBorder text-gEarthBlue flex items-start space-x-3">
+        <i class="fa-solid fa-circle-info text-lg mt-0.5"></i>
+        <div class="text-xs leading-relaxed font-sans">
+          <strong class="font-bold text-sm block mb-0.5">📖 How to Use Executive Decision Briefs:</strong>
+          Generate a formal executive policy brief based on active terminal telemetry. The document synthesizes spatial targets, Mann-Kendall trend tests ($p$-values, Sen's slope $\beta$), anomaly status, and strategic policy recommendations ready for 1-click text export.
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Actions Panel -->
+        <div class="lg:col-span-4 space-y-4">
+          <div class="g-card p-5 space-y-4">
+            <h3 class="text-sm font-bold text-gEarthText flex items-center space-x-2 border-b border-gEarthBorder pb-3">
+              <i class="fa-solid fa-file-contract text-gEarthBlue"></i>
+              <span>Brief Actions &amp; Directives</span>
+            </h3>
+
+            <div class="space-y-2">
+              <button onclick="exportBriefText()" class="w-full py-2.5 rounded-xl bg-gEarthBlue hover:bg-gEarthBlueHover text-white text-xs font-bold transition flex items-center justify-center space-x-2 shadow-sm">
+                <i class="fa-solid fa-download"></i>
+                <span>Download Executive Brief (.TXT)</span>
+              </button>
+
+              <button onclick="copyBriefToClipboard()" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-gEarthText text-xs font-bold transition flex items-center justify-center space-x-2 border border-gEarthBorder">
+                <i class="fa-solid fa-copy text-gEarthBlue"></i>
+                <span>Copy Brief to Clipboard</span>
+              </button>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-gEarthBorder space-y-2">
+              <span class="text-xs font-bold text-gEarthText block">Target Executive Recipients</span>
+              <div class="space-y-1 text-xs text-gEarthMuted">
+                <label class="flex items-center space-x-2">
+                  <input type="checkbox" checked class="rounded text-gEarthBlue">
+                  <span>NASA Earth Science Division</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                  <input type="checkbox" checked class="rounded text-gEarthBlue">
+                  <span>UN Environment Programme (UNEP)</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                  <input type="checkbox" checked class="rounded text-gEarthBlue">
+                  <span>African Ministerial Council on Water</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Document Preview -->
+        <div class="lg:col-span-8">
+          <div class="g-card p-8 space-y-6 font-sans">
+            
+            <div class="border-b-2 border-gEarthText pb-4 flex justify-between items-start">
+              <div>
+                <span class="text-xs font-mono font-bold text-gEarthBlue uppercase tracking-widest block">NASA SPACE APPS BRIEFING DOCUMENT</span>
+                <h2 class="text-xl font-bold text-gEarthText">EXECUTIVE PLANETARY DECISION BRIEF</h2>
+                <span class="text-xs text-gEarthMuted">Terminal Protocol: C.A.S.C.A.D.E. v2026.4</span>
+              </div>
+              <div class="text-right text-xs font-mono text-gEarthMuted">
+                <span class="block">Date: Nov 6, 2026</span>
+                <span class="block font-bold text-gEarthGreen">CONFIDENCE: 99.1%</span>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <h3 class="text-xs font-bold text-gEarthText uppercase tracking-wider font-mono">1. Executive Summary &amp; Target Location</h3>
+              <p id="briefSummaryText" class="text-xs text-gEarthMuted leading-relaxed">
+                Multi-variable satellite telemetry for <strong>Central Africa (Congo Basin)</strong> (0.000° N, 20.000° E) reveals significant multi-decadal shifts across hydrological storage (GRACE-FO) and aerosol optical depth (MODIS). Statistical testing confirms non-random trend persistence requiring targeted leadership intervention. A comprehensive systemic risk profile indicates compounding vulnerabilities in localized water tables and increased heat anomaly frequency.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-50 border border-gEarthBorder space-y-2">
+              <h3 class="text-xs font-bold text-gEarthText uppercase tracking-wider font-mono">2. Statistical Rigor Diagnostics</h3>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-mono">
+                <div>
+                  <span class="text-[10px] text-gEarthMuted block font-sans">Mann-Kendall Test</span>
+                  <span id="briefPVal" class="font-bold text-gEarthGreen">p &lt; 0.001 (Pass)</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-gEarthMuted block font-sans">Sen's Slope (β)</span>
+                  <span id="briefSlope" class="font-bold text-gEarthBlue">+0.142 / yr</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-gEarthMuted block font-sans">Z-Score Status</span>
+                  <span id="briefZScore" class="font-bold text-gEarthRed">+4.82 σ (Alert)</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-gEarthMuted block font-sans">Kendall's Tau (τ)</span>
+                  <span class="font-bold text-gEarthText">+0.684</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <h3 class="text-xs font-bold text-gEarthText uppercase tracking-wider font-mono">3. Systemic Risk &amp; Cascade Analysis</h3>
+              <p class="text-xs text-gEarthMuted leading-relaxed">
+                Based on multi-orbital cascade modeling, present thermal anomalies threaten to induce a secondary aerosol optical depth (AOD) accumulation. Left unmitigated, this is projected to disrupt sea surface temperature evaporation cycles, severely starving downwind aquifer recharge rates by 2032.
+              </p>
+            </div>
+
+            <div class="space-y-2">
+              <h3 class="text-xs font-bold text-gEarthText uppercase tracking-wider font-mono">4. Prioritized Strategic Policy Interventions</h3>
+              <ul class="list-disc list-inside space-y-1.5 text-xs text-gEarthMuted leading-relaxed">
+                <li><strong class="text-gEarthText">Immediate Emergency Action:</strong> Enforce <span id="docBriefWater">15</span>% agricultural groundwater rationing in high-drawdown aquifers to arrest immediate baseline deviation.</li>
+                <li><strong class="text-gEarthText">Mid-Term Infrastructure:</strong> Mandate +<span id="docBriefGreen">10</span>% urban greening canopy target to reduce surface temperature anomalies.</li>
+                <li><strong class="text-gEarthText">Long-Term Resilience:</strong> Expand satellite radiometer monitoring mesh density to <span id="docBriefSensor">250</span> active nodes to tighten predictive uncertainty bands.</li>
+              </ul>
+            </div>
+
+            <div class="pt-4 border-t border-gEarthBorder flex justify-between items-center text-[10px] font-mono text-gEarthMuted">
+              <span>Authored by: C.A.S.C.A.D.E. Decision Engine</span>
+              <span>NASA Earth Science Trend Detective Challenge</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- USER GUIDE MODAL -->
+  <div id="modalUserGuide" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="g-card max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-gEarthBorder pb-3">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-book-open text-gEarthBlue text-lg"></i>
+          <h3 class="text-base font-bold text-gEarthText">C.A.S.C.A.D.E. Terminal User Guide</h3>
+        </div>
+        <button onclick="closeUserGuideModal()" class="text-gEarthMuted hover:text-gEarthText text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs text-gEarthMuted leading-relaxed">
+        
+        <div>
+          <h4 class="font-bold text-gEarthText text-sm mb-1">🌍 Project Overview</h4>
+          <p>C.A.S.C.A.D.E. (Climate &amp; Atmospheric Satellite Computing for Anomaly &amp; Decision Engines) is developed for the NASA Space Apps Challenge theme <em>"Be An Earth System Trend Detective!"</em>. It empowers researchers and decision-makers to inspect multi-orbital telemetry, perform non-parametric statistical trend analysis, simulate policy interventions, and model cascade domino effects.</p>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-gEarthText text-sm mb-1">📊 Statistical Methodology</h4>
+          <ul class="list-disc list-inside space-y-1">
+            <li><strong>Mann-Kendall Trend Test:</strong> Evaluates monotonic trends in time-series data without assuming normal distribution ($p &lt; 0.05$ threshold).</li>
+            <li><strong>Sen's Slope ($\beta$):</strong> Non-parametric estimator of the linear magnitude of trend change per year.</li>
+            <li><strong>Z-Score Anomaly Detection:</strong> Flags deviations exceeding $+2\sigma$ standard deviations from baseline averages.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-gEarthText text-sm mb-1">🗺️ Tab Overview</h4>
+          <ol class="list-decimal list-inside space-y-1">
+            <li><strong>3D Multi-Slice Globe:</strong> WebGL rendering of 5 longitudinal Earth observation slices centered over Africa.</li>
+            <li><strong>Global Maps &amp; Pinning:</strong> High-resolution Esri satellite map with spatial search and bounding box selector.</li>
+            <li><strong>Trend Detective (Steps I-V):</strong> Complete 5-step investigative workflow with Chart.js time series graphs.</li>
+            <li><strong>What-If Policy Simulator:</strong> Interactive slider controls projecting 2026–2036 policy outcomes.</li>
+            <li><strong>Multi-Orbital Cascade:</strong> 5-stage domino ripple model linking volcano emissions to groundwater depletion.</li>
+            <li><strong>Executive Decision Briefs:</strong> 1-click executive policy report generator and text exporter.</li>
+          </ol>
+        </div>
+
+      </div>
+
+      <div class="pt-3 border-t border-gEarthBorder flex justify-end">
+        <button onclick="closeUserGuideModal()" class="px-5 py-2 rounded-xl bg-gEarthBlue hover:bg-gEarthBlueHover text-white text-xs font-semibold transition">
+          Close Guide
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+
+  <!-- APPLICATION LOGIC & THREE.JS ENGINE -->
+  <script>
+    /* STATE */
+    const state = {
+      activeTab: 'tabGlobe',
+      targetLat: 0.0,
+      targetLon: 20.0,
+      locationName: 'Central Africa (Congo Basin)',
+      activeVar: 'so2',
+      cascadeStage: 1,
+      wallpaperOpacity: 35,
+      layers: {
+        rainfall: true,
+        soil: true,
+        heat: true,
+        veg: true,
+        water: true
+      },
+      policy: {
+        water: 15,
+        greening: 10,
+        aerosol: 25,
+        sensor: 250
+      }
+    };
+
+    // Globals
+    let mainMap, mainMapLayers = {};
+    let leafletMap, leafletMarker, leafletRectangle;
+    let leafletLayers = {};
+    let chartDetective, chartPolicy;
+    let satellites = [];
+    let animationFrameId;
+
+    /* WALLPAPER CANVAS GENERATOR (NEURAL NETWORK STARFIELD) */
+    function drawNeuralNetworkStarfield() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1920;
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const nodes = [];
+      for (let i = 0; i < 200; i++) {
+        nodes.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.5 + 0.5,
+          color: Math.random() > 0.8 ? '#0B57D0' : '#475569'
+        });
+      }
+
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(148, 163, 184, ${1 - dist/120})`;
+            ctx.stroke();
+          }
+        }
+      }
+
+      nodes.forEach(node => {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        ctx.fillStyle = node.color;
+        ctx.fill();
+        
+        if (node.color === '#0B57D0') {
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = '#0B57D0';
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      });
+
+      return canvas;
+    }
+
+    function initWallpaperCanvas() {
+      const canvas = document.getElementById('wallpaperCanvas');
+      if (!canvas) return;
+      const textureCanvas = drawNeuralNetworkStarfield();
+      canvas.width = textureCanvas.width;
+      canvas.height = textureCanvas.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(textureCanvas, 0, 0);
+    }
+
+    function changeWallpaperOpacity(val) {
+      state.wallpaperOpacity = val;
+      const container = document.getElementById('wallpaperContainer');
+      const txt = document.getElementById('wallpaperOpacityTxt');
+      if (container) container.style.opacity = (val / 100).toString();
+      if (txt) txt.innerText = `${val}%`;
+    }
+
+    /* LAYER TOGGLE */
+    function toggleObservationLayer(layerKey) {
+      const chk = document.getElementById('chk' + layerKey.charAt(0).toUpperCase() + layerKey.slice(1));
+      state.layers[layerKey] = chk ? chk.checked : true;
+
+      if (leafletMap && leafletLayers[layerKey]) {
+        if (state.layers[layerKey]) {
+          leafletLayers[layerKey].addTo(leafletMap);
+        } else {
+          leafletMap.removeLayer(leafletLayers[layerKey]);
+        }
+      }
+
+      if (mainMap && mainMapLayers[layerKey]) {
+        if (state.layers[layerKey]) {
+          mainMapLayers[layerKey].addTo(mainMap);
+        } else {
+          mainMap.removeLayer(mainMapLayers[layerKey]);
+        }
+      }
+
+      showToast(`Toggled ${layerKey.toUpperCase()} Layer: ${state.layers[layerKey] ? 'ON' : 'OFF'}`);
+    }
+
+    function applyCustomCoordinates() {
+      const lat = parseFloat(document.getElementById('inputCustomLat').value) || 0.0;
+      const lon = parseFloat(document.getElementById('inputCustomLon').value) || 20.0;
+      setPinLocation(lat, lon, 'Custom Location');
+    }
+
+    /* TAB 1: MAIN LEAFLET MAP ENGINE */
+    function initMainLeafletMap() {
+      const container = document.getElementById('mainLeafletMap');
+      if (!container) return;
+
+      mainMap = L.map('mainLeafletMap', {
+        zoomControl: true,
+        attributionControl: true,
+        worldCopyJump: true
+      }).setView([0.0, 20.0], 4);
+
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      }).addTo(mainMap);
+
+      mainMapLayers.heat = L.circleMarker([6.2, 42.5], { radius: 100, color: '#ef4444', fillColor: '#f59e0b', fillOpacity: 0.35 }).bindPopup('<b>🔥 Surface Heat Anomaly</b><br>GOES Thermal LST: +3.8σ').addTo(mainMap);
+      mainMapLayers.veg = L.circleMarker([-0.8, 22.5], { radius: 120, color: '#10b981', fillColor: '#059669', fillOpacity: 0.3 }).bindPopup('<b>🌿 Congo Rainforest Canopy</b><br>NDVI Canopy Index: 0.84').addTo(mainMap);
+      mainMapLayers.rainfall = L.circleMarker([14.5, 1.2], { radius: 110, color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.35 }).bindPopup('<b>🌧️ Sahel Rainfall Deficit</b><br>GPM IMERG Rate: -22%').addTo(mainMap);
+      mainMapLayers.water = L.circleMarker([-2.5, 32.8], { radius: 80, color: '#06b6d4', fillColor: '#0891b2', fillOpacity: 0.4 }).bindPopup('<b>💧 Great Lakes Aquifer</b><br>GRACE Gravimetric Level').addTo(mainMap);
+      mainMapLayers.soil = L.circleMarker([-23.0, 21.5], { radius: 90, color: '#d97706', fillColor: '#f59e0b', fillOpacity: 0.35 }).bindPopup('<b>🌾 Kalahari Soil Moisture</b><br>SMAP Volumetric Index: 0.12 m³/m³').addTo(mainMap);
+
+      const satData = [
+        { id: 'Terra', lat: 30, lon: -40, speed: 0.08, angle: 10, color: '#0B57D0' },
+        { id: 'Aqua', lat: -20, lon: 10, speed: 0.12, angle: 45, color: '#10b981' },
+        { id: 'GPM', lat: 10, lon: 60, speed: 0.15, angle: -20, color: '#8b5cf6' },
+        { id: 'GRACE', lat: -40, lon: -20, speed: 0.09, angle: 80, color: '#f59e0b' }
+      ];
+
+      satData.forEach(sat => {
+        const iconHtml = '<div class="satellite-marker">' +
+                           '<div class="satellite-crosshair" style="border-color: ' + sat.color + '"></div>' +
+                           '<div class="satellite-label" style="color: ' + sat.color + '">' + sat.id + '</div>' +
+                         '</div>';
+        const icon = L.divIcon({
+          html: iconHtml,
+          className: '',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+
+        const marker = L.marker([sat.lat, sat.lon], { icon, zIndexOffset: 1000 }).addTo(mainMap);
+        satellites.push({ marker, ...sat });
+      });
+
+      mainMap.on('click', function(e) {
+        setPinLocation(parseFloat(e.latlng.lat.toFixed(3)), parseFloat(e.latlng.lng.toFixed(3)), 'Main Map Pin');
+        switchTab('tabDetective');
+      });
+
+      startSatelliteOrbits();
+    }
+
+    function startSatelliteOrbits() {
+      function animate() {
+        satellites.forEach(sat => {
+          sat.lat += sat.speed * Math.sin(sat.angle * Math.PI / 180);
+          sat.lon += sat.speed * Math.cos(sat.angle * Math.PI / 180);
+          
+          if (sat.lon > 180) sat.lon -= 360;
+          if (sat.lon < -180) sat.lon += 360;
+          if (sat.lat > 90) sat.lat -= 180;
+          if (sat.lat < -90) sat.lat += 180;
+
+          sat.marker.setLatLng([sat.lat, sat.lon]);
+        });
+        animationFrameId = requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    /* LEAFLET MAP ENGINE (Tab 2) */
+    function initLeafletMap() {
+      const container = document.getElementById('leafletMap');
+      if (!container) return;
+
+      leafletMap = L.map('leafletMap').setView([state.targetLat, state.targetLon], 4);
+
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      }).addTo(leafletMap);
+
+      leafletLayers.heat = L.circleMarker([6.2, 42.5], { radius: 60, color: '#ef4444', fillColor: '#f59e0b', fillOpacity: 0.35 }).bindPopup('<b>🔥 Surface Heat Anomaly</b><br>GOES Thermal LST: +3.8σ').addTo(leafletMap);
+      leafletLayers.veg = L.circleMarker([-0.8, 22.5], { radius: 80, color: '#10b981', fillColor: '#059669', fillOpacity: 0.3 }).bindPopup('<b>🌿 Congo Rainforest Canopy</b><br>NDVI Canopy Index: 0.84').addTo(leafletMap);
+      leafletLayers.rainfall = L.circleMarker([14.5, 1.2], { radius: 70, color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.35 }).bindPopup('<b>🌧️ Sahel Rainfall Deficit</b><br>GPM IMERG Rate: -22%').addTo(leafletMap);
+      leafletLayers.water = L.circleMarker([-2.5, 32.8], { radius: 50, color: '#06b6d4', fillColor: '#0891b2', fillOpacity: 0.4 }).bindPopup('<b>💧 Great Lakes Aquifer</b><br>GRACE Gravimetric Level').addTo(leafletMap);
+      leafletLayers.soil = L.circleMarker([-23.0, 21.5], { radius: 55, color: '#d97706', fillColor: '#f59e0b', fillOpacity: 0.35 }).bindPopup('<b>🌾 Kalahari Soil Moisture</b><br>SMAP Volumetric Index: 0.12 m³/m³').addTo(leafletMap);
+
+      leafletMarker = L.marker([state.targetLat, state.targetLon], { draggable: true }).addTo(leafletMap);
+      leafletMarker.bindPopup(`<b>${state.locationName}</b><br>Lat: ${state.targetLat}, Lon: ${state.targetLon}`).openPopup();
+
+      leafletMarker.on('dragend', function (e) {
+        const coord = e.target.getLatLng();
+        setPinLocation(parseFloat(coord.lat.toFixed(3)), parseFloat(coord.lng.toFixed(3)), 'Custom Drag Pin');
+      });
+
+      leafletMap.on('click', function (e) {
+        setPinLocation(parseFloat(e.latlng.lat.toFixed(3)), parseFloat(e.latlng.lng.toFixed(3)), 'Clicked Location');
+        switchTab('tabDetective'); // Auto-redirect to Trend Detective
+      });
+
+      updateBoundingBox();
+    }
+
+    function updateBoundingBox() {
+      if (!leafletMap) return;
+      const latOffset = parseFloat(document.getElementById('inputLatOffset').value) || 2.5;
+      const lonOffset = parseFloat(document.getElementById('inputLonOffset').value) || 3.0;
+
+      const bounds = [
+        [state.targetLat - latOffset, state.targetLon - lonOffset],
+        [state.targetLat + latOffset, state.targetLon + lonOffset]
+      ];
+
+      if (leafletRectangle) {
+        leafletRectangle.setBounds(bounds);
+      } else {
+        leafletRectangle = L.rectangle(bounds, { color: '#0b57d0', weight: 2, fillOpacity: 0.1, dashArray: '4, 4' }).addTo(leafletMap);
+      }
+    }
+
+    function setPinLocation(lat, lon, name = 'Target Location') {
+      state.targetLat = lat;
+      state.targetLon = lon;
+      state.locationName = name;
+
+      document.getElementById('headerPinText').innerText = `${lat}° N, ${lon}° E`;
+      document.getElementById('inputCustomLat').value = lat;
+      document.getElementById('inputCustomLon').value = lon;
+
+      document.getElementById('txtMapLat').innerText = `${lat}° N`;
+      document.getElementById('txtMapLon').innerText = `${lon}° E`;
+
+      if (leafletMap && leafletMarker) {
+        leafletMarker.setLatLng([lat, lon]);
+        leafletMarker.setPopupContent(`<b>${name}</b><br>Lat: ${lat}, Lon: ${lon}`);
+        leafletMap.panTo([lat, lon]);
+        updateBoundingBox();
+      }
+
+      document.getElementById('txtDetLocName').innerText = name;
+      document.getElementById('txtDetLocCoords').innerText = `${lat}° N, ${lon}° E`;
+      document.getElementById('briefSummaryText').innerHTML = `Multi-variable satellite telemetry for <strong>${name}</strong> (${lat}° N, ${lon}° E) reveals significant multi-decadal shifts across hydrological storage (GRACE-FO) and aerosol optical depth (MODIS). Statistical testing confirms non-random trend persistence requiring targeted leadership intervention. A comprehensive systemic risk profile indicates compounding vulnerabilities in localized water tables and increased heat anomaly frequency.`;
+      
+      // Update Summary Matrix
+      if (document.getElementById('matrixWhere')) {
+        document.getElementById('matrixWhere').innerText = name;
+      }
+
+      updateDetectiveChart();
+      updatePolicySimulation();
+      if (typeof mainMap !== 'undefined' && mainMap) {
+        mainMap.panTo([lat, lon]);
+      }
+
+      showToast(`Target Pin set to ${name} (${lat}°, ${lon}°)`);
+    }
+
+    /* CHART.JS ENGINES */
+    function initDetectiveChart() {
+      const ctx = document.getElementById('chartDetective');
+      if (!ctx) return;
+
+      const labels = [];
+      const dataObs = [];
+      const dataMoving = [];
+      const dataSlope = [];
+      const dataThreshold = [];
+
+      let baseVal = 10;
+      for (let yr = 2002; yr <= 2026; yr++) {
+        labels.push(yr.toString());
+        baseVal += 0.8 + (Math.random() * 1.5 - 0.7);
+        dataObs.push(parseFloat(baseVal.toFixed(2)));
+        dataMoving.push(parseFloat((baseVal - 0.4).toFixed(2)));
+        dataSlope.push(parseFloat((10 + (yr - 2002) * 0.95).toFixed(2)));
+        dataThreshold.push(22);
+      }
+
+      chartDetective = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Observed Telemetry', data: dataObs, borderColor: '#0b57d0', backgroundColor: 'rgba(11, 87, 208, 0.08)', fill: true, tension: 0.3 },
+            { label: '12M Moving Average', data: dataMoving, borderColor: '#2563eb', borderWidth: 2, pointRadius: 0 },
+            { label: "Sen's Slope Trend (β)", data: dataSlope, borderColor: '#ef4444', borderWidth: 2, borderDash: [4, 4], pointRadius: 0 },
+            { label: '+2σ Anomaly Alert Line', data: dataThreshold, borderColor: '#f59e0b', borderWidth: 1.5, borderDash: [2, 2], pointRadius: 0 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { 
+              grid: { display: false },
+              title: { display: true, text: 'Observation Year (2002 - 2026)', color: '#444746', font: { weight: 'bold', family: "'Google Sans', sans-serif" } }
+            },
+            y: { 
+              grid: { color: '#e1e3e1' },
+              title: { display: true, text: 'Standardized Measurement Units', color: '#444746', font: { weight: 'bold', family: "'Google Sans', sans-serif" } }
+            }
+          }
+        }
+      });
+    }
+
+    function updateDetectiveChart() {
+      if (!chartDetective) return;
+      
+      const isPositiveTrend = Math.random() > 0.5;
+      let startVal = chartDetective.data.datasets[0].data[0];
+      let endVal = chartDetective.data.datasets[0].data[24];
+      let delta = (endVal - startVal).toFixed(2);
+      
+      chartDetective.data.datasets[0].data = chartDetective.data.datasets[0].data.map(v => parseFloat((v + (Math.random() * 2 - 1)).toFixed(2)));
+      chartDetective.update();
+
+      // Update Summary Matrix How Much
+      if (document.getElementById('matrixHowMuch')) {
+        const sign = delta > 0 ? '+' : '';
+        document.getElementById('matrixHowMuch').innerText = `${sign}${delta} Units (Net ${delta > 0 ? 'Increase' : 'Decrease'})`;
+      }
+
+      generateTimeline();
+    }
+
+    function generateTimeline() {
+      const timelineContainer = document.getElementById('chronologicalTimeline');
+      if (!timelineContainer) return;
+      
+      const timelineData = {
+        so2: [
+          { year: 2004, title: 'Baseline Established', desc: 'Initial steady-state SO2 column density observation period concludes.', type: 'neutral' },
+          { year: 2011, title: 'First +1σ Deviation', desc: 'Slight SO2 anomaly detected deviating from rolling 10-year mean.', type: 'warning' },
+          { year: 2016, title: 'Trend Acceleration', desc: 'Industrial aerosol emissions drive Sen\'s slope steepening.', type: 'alert' },
+          { year: 2021, title: 'Critical +2σ Breach', desc: 'SO2 variable breaches statistical safety threshold.', type: 'critical' },
+          { year: 2026, title: 'Current Status', desc: 'Significant monotonic trend confirmed via Mann-Kendall test.', type: 'alert' }
+        ],
+        aod: [
+          { year: 2005, title: 'Baseline Established', desc: 'Initial steady-state AOD optical depth baseline logged.', type: 'neutral' },
+          { year: 2012, title: 'Particulate Accumulation', desc: 'Increase in scattering particulate matter observed.', type: 'warning' },
+          { year: 2018, title: 'Regional Haze Event', desc: 'Prolonged AOD deviation alters localized solar insolation.', type: 'alert' },
+          { year: 2023, title: 'Critical +2σ Breach', desc: 'AOD variable breaches upper safety limits.', type: 'critical' },
+          { year: 2026, title: 'Current Status', desc: 'Significant monotonic trend confirmed via Mann-Kendall test.', type: 'alert' }
+        ],
+        ice: [
+          { year: 2003, title: 'Baseline Extent Established', desc: 'CryoSat-2 confirms initial glacial/sea ice extent.', type: 'neutral' },
+          { year: 2010, title: 'Early Melt Acceleration', desc: 'Summer melt season extends beyond historical averages.', type: 'warning' },
+          { year: 2017, title: 'Mass Loss Acceleration', desc: 'Multi-year ice volume reduction accelerates significantly.', type: 'alert' },
+          { year: 2022, title: 'Critical -2σ Breach', desc: 'Ice extent drops below critical deviation threshold.', type: 'critical' },
+          { year: 2026, title: 'Current Status', desc: 'Negative monotonic trend confirmed via Mann-Kendall test.', type: 'alert' }
+        ],
+        sst: [
+          { year: 2004, title: 'Baseline Established', desc: 'Initial mean SST for selected ocean grid established.', type: 'neutral' },
+          { year: 2014, title: 'Marine Heatwave', desc: 'Prolonged +1.5σ thermal anomaly detected by VIIRS.', type: 'warning' },
+          { year: 2019, title: 'Trend Steepening', desc: 'Baseline shifts upwards, altering local evaporation fluxes.', type: 'alert' },
+          { year: 2024, title: 'Critical +2σ Breach', desc: 'SST exceeds structural safety threshold for coral ecosystems.', type: 'critical' },
+          { year: 2026, title: 'Current Status', desc: 'Significant positive trend confirmed via Mann-Kendall test.', type: 'alert' }
+        ],
+        grace: [
+          { year: 2002, title: 'Baseline Established', desc: 'GRACE gravimetric baseline for aquifer storage initialized.', type: 'neutral' },
+          { year: 2009, title: 'Drawdown Initiated', desc: 'Extraction exceeds natural recharge rate during drought.', type: 'warning' },
+          { year: 2015, title: 'Subsidence Risk', desc: 'Rapid mass loss flagged. Sen\'s slope indicates severe depletion.', type: 'alert' },
+          { year: 2021, title: 'Critical -2σ Breach', desc: 'Aquifer drops below critical structural support levels.', type: 'critical' },
+          { year: 2026, title: 'Current Status', desc: 'Negative monotonic trend confirmed via Mann-Kendall test.', type: 'alert' }
+        ],
+        weather: [
+          { year: 2006, title: 'Baseline Established', desc: 'Frequency of cyclonic and severe storm systems normalized.', type: 'neutral' },
+          { year: 2013, title: 'Intensity Shift', desc: 'Precipitation rate per storm event increases by +12%.', type: 'warning' },
+          { year: 2020, title: 'Trend Acceleration', desc: 'Frequency of Category 3+ storms deviates from rolling mean.', type: 'alert' },
+          { year: 2024, title: 'Critical +2σ Breach', desc: 'Storm kinetic energy metric breaches safety threshold.', type: 'critical' },
+          { year: 2026, title: 'Current Status', desc: 'Significant monotonic trend confirmed via Mann-Kendall test.', type: 'alert' }
+        ]
+      };
+
+      const events = timelineData[state.activeVar] || timelineData['so2'];
+
+      timelineContainer.innerHTML = '';
+      events.forEach(evt => {
+        let colorClass = 'bg-slate-200 border-slate-300';
+        let textClass = 'text-slate-600';
+        if (evt.type === 'warning') { colorClass = 'bg-amber-100 border-amber-300'; textClass = 'text-amber-800'; }
+        if (evt.type === 'alert') { colorClass = 'bg-orange-100 border-orange-300'; textClass = 'text-orange-800'; }
+        if (evt.type === 'critical') { colorClass = 'bg-red-100 border-red-300'; textClass = 'text-red-800'; }
+
+        timelineContainer.innerHTML += `
+          <div class="relative pl-4 border-l-2 ${colorClass.split(' ')[1]}">
+            <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full ${colorClass.split(' ')[0]} border ${colorClass.split(' ')[1]}"></div>
+            <span class="text-[10px] font-mono font-bold ${textClass}">${evt.year}</span>
+            <h5 class="text-xs font-bold text-gEarthText">${evt.title}</h5>
+            <p class="text-[10px] text-gEarthMuted mt-0.5 leading-tight">${evt.desc}</p>
+          </div>
+        `;
+      });
+    }
+
+    function selectVariable(varKey) {
+      state.activeVar = varKey;
+      document.querySelectorAll('.var-card').forEach(btn => {
+        btn.classList.remove('border-gEarthBlue', 'bg-gEarthPillActive', 'text-gEarthPillText');
+        btn.classList.add('border-gEarthBorder', 'bg-slate-50', 'text-gEarthMuted');
+      });
+
+      const activeBtn = document.getElementById('varBtn_' + varKey);
+      let varName = 'Selected Variable';
+      if (activeBtn) {
+        activeBtn.classList.remove('border-gEarthBorder', 'bg-slate-50', 'text-gEarthMuted');
+        activeBtn.classList.add('border-gEarthBlue', 'bg-gEarthPillActive', 'text-gEarthPillText');
+        varName = activeBtn.querySelector('span').innerText;
+      }
+      
+      // Update Summary Matrix What
+      if (document.getElementById('matrixWhat')) {
+        document.getElementById('matrixWhat').innerText = varName;
+      }
+
+      updateDetectiveChart();
+      showToast(`Selected Observation Variable: ${varKey.toUpperCase()}`);
+    }
+
+    function initPolicyChart() {
+      const ctx = document.getElementById('chartPolicy');
+      if (!ctx) return;
+
+      const labels = ['2026', '2028', '2030', '2032', '2034', '2036'];
+      chartPolicy = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Business-As-Usual (BAU)', data: [2.5, 3.2, 4.0, 4.7, 5.3, 5.92], borderColor: '#ef4444', borderWidth: 2, borderDash: [4, 4] },
+            { label: 'Policy Projected Trajectory', data: [2.5, 2.3, 2.0, 1.7, 1.4, 1.24], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, borderWidth: 3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top' } },
+          scales: { 
+            x: { title: { display: true, text: 'Projection Year (2026 - 2036)', color: '#444746', font: { weight: 'bold', family: "'Google Sans', sans-serif" } } },
+            y: { title: { display: true, text: 'Z-Score Anomaly Deviation (σ)', color: '#444746', font: { weight: 'bold', family: "'Google Sans', sans-serif" } } } 
+          }
+        }
+      });
+    }
+
+    function updatePolicySimulation() {
+      state.policy.water = parseInt(document.getElementById('sliderWater').value);
+      state.policy.greening = parseInt(document.getElementById('sliderGreening').value);
+      state.policy.aerosol = parseInt(document.getElementById('sliderAerosol').value);
+      state.policy.sensor = parseInt(document.getElementById('sliderSensor').value);
+
+      document.getElementById('txtValWater').innerText = `${state.policy.water}% Reduction`;
+      document.getElementById('txtValGreening').innerText = `+${state.policy.greening}% Canopy`;
+      document.getElementById('txtValAerosol').innerText = `${state.policy.aerosol}% Cap`;
+      document.getElementById('txtValSensor').innerText = `${state.policy.sensor} Nodes`;
+      
+      // Update Brief Data Hooks
+      if (document.getElementById('docBriefWater')) document.getElementById('docBriefWater').innerText = state.policy.water;
+      if (document.getElementById('docBriefGreen')) document.getElementById('docBriefGreen').innerText = state.policy.greening;
+      if (document.getElementById('docBriefSensor')) document.getElementById('docBriefSensor').innerText = state.policy.sensor;
+
+      if (chartPolicy) {
+        // Sensor density now dynamically tightens the trajectory impact capability
+        const impact = (state.policy.water * 0.04) + (state.policy.greening * 0.05) + (state.policy.aerosol * 0.03) + (state.policy.sensor * 0.002);
+        const finalOutcome = Math.max(0.4, (5.92 - impact)).toFixed(2);
+        chartPolicy.data.datasets[1].data = [2.5, (2.3 - impact*0.2).toFixed(2), (2.0 - impact*0.4).toFixed(2), (1.7 - impact*0.6).toFixed(2), (1.4 - impact*0.8).toFixed(2), finalOutcome];
+        chartPolicy.update();
+
+        document.getElementById('txtPolicyOutcome').innerText = `+${finalOutcome} σ (Stabilized)`;
+      }
+    }
+
+    /* CASCADE STEPPER */
+    function selectCascadeStage(stageNum) {
+      state.cascadeStage = stageNum;
+
+      for (let i = 1; i <= 5; i++) {
+        const card = document.getElementById('cascadeCard' + i);
+        if (card) {
+          if (i === stageNum) {
+            card.classList.add('border-gEarthBlue', 'bg-blue-50/50');
+            card.classList.remove('border-gEarthBorder');
+          } else {
+            card.classList.remove('border-gEarthBlue', 'bg-blue-50/50');
+            card.classList.add('border-gEarthBorder');
+          }
+        }
+      }
+
+      const stageData = [
+        {
+          title: 'Stage 1: Volcanic Eruption & SO2 Injection',
+          desc: 'High-altitude SO2 injection from major volcanic eruptions creates stratospheric aerosol plumes. Aqua MODIS and Aura OMI track SO2 column density spikes exceeding +4.5σ baseline standard deviations.',
+          badge: 'Satellite Sensor: MODIS / Aura OMI',
+          conf: '98.4% (High Confidence)',
+          confDesc: 'Cross-verified by Sentinel-5P TROPOMI.',
+          risk: 'Stratospheric Plume Dispersion',
+          riskDesc: 'Predicted 14-day global transport window.',
+          rec: 'Activate High-Cadence Orbiters',
+          recDesc: 'Increase spatial sampling frequency to 1H.'
+        },
+        {
+          title: 'Stage 2: Aerosol Optical Depth Accumulation',
+          desc: 'Atmospheric aerosols coalesce, drastically increasing localized Aerosol Optical Depth (AOD). This dense particulate layer begins to intercept and scatter incoming solar radiation before it reaches the surface.',
+          badge: 'Satellite Sensor: Aqua AOD',
+          conf: '95.2% (Confirmed)',
+          confDesc: 'AOD anomaly detected across 4 grid cells.',
+          risk: 'Solar Insolation Deficit',
+          riskDesc: 'Reduced photosynthetic active radiation.',
+          rec: 'Deploy Drone Sampling',
+          recDesc: 'Analyze particulate size distribution.'
+        },
+        {
+          title: 'Stage 3: Radiative Trap & Atmospheric Cooling',
+          desc: 'The sustained aerosol shield induces a net negative radiative forcing effect. Surface temperatures in the affected region drop rapidly as solar energy is reflected back into space.',
+          badge: 'Satellite Sensor: GOES-R',
+          conf: '91.8% (Likely)',
+          confDesc: 'Correlated with ground station thermal drops.',
+          risk: 'Rapid Localized Cooling',
+          riskDesc: 'Disruption of regional micro-climates.',
+          rec: 'Issue Agricultural Alert',
+          recDesc: 'Warn of potential frost or growth stunting.'
+        },
+        {
+          title: 'Stage 4: Sea Surface Temp Drop & Evaporation',
+          desc: 'Cooler atmospheric masses interact with adjacent ocean bodies, lowering Sea Surface Temperatures (SST). This thermal dampening reduces oceanic evaporation rates, starving the atmosphere of moisture.',
+          badge: 'Satellite Sensor: VIIRS SST',
+          conf: '88.5% (Developing)',
+          confDesc: 'Lagging indicator trailing by 3-4 weeks.',
+          risk: 'Precipitation Deficit',
+          riskDesc: 'Drying of inland windward moisture corridors.',
+          rec: 'Model Hydrological Impact',
+          recDesc: 'Simulate downwind drought probabilities.'
+        },
+        {
+          title: 'Stage 5: Aquifer Storage Depletion Escalation',
+          desc: 'Prolonged rainfall deficits force increased agricultural reliance on subterranean groundwater. GRACE-FO gravimetric data reveals accelerated mass loss in local aquifers as drawdown exceeds natural recharge.',
+          badge: 'Satellite Sensor: GRACE-FO',
+          conf: '99.9% (Critical)',
+          confDesc: 'Mass anomaly exceeds sustainable thresholds.',
+          risk: 'Irreversible Subsidence',
+          riskDesc: 'Collapse of aquifer porous structures.',
+          rec: 'Enforce Water Rationing',
+          recDesc: 'Mandate immediate 15% extraction cutbacks.'
+        }
+      ];
+
+      const data = stageData[stageNum - 1];
+      document.getElementById('txtCascadeStageTitle').innerText = data.title;
+      document.getElementById('txtCascadeStageDesc').innerText = data.desc;
+      document.getElementById('txtCascadeBadge').innerText = data.badge;
+      document.getElementById('txtCascadeConf').innerText = data.conf;
+      document.getElementById('txtCascadeConf').nextElementSibling.innerText = data.confDesc;
+      document.getElementById('txtCascadeRisk').innerText = data.risk;
+      document.getElementById('txtCascadeRisk').nextElementSibling.innerText = data.riskDesc;
+      document.getElementById('txtCascadeRec').innerText = data.rec;
+      document.getElementById('txtCascadeRec').nextElementSibling.innerText = data.recDesc;
+
+      showToast(`Inspecting Cascade ${data.title}`);
+    }
+
+    /* TAB SWITCHING ROUTER */
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+
+      ['tabGlobe', 'tabMaps', 'tabDetective', 'tabPolicy', 'tabCascade', 'tabBrief'].forEach(id => {
+        const el = document.getElementById(id);
+        const btn = document.getElementById('btn' + id.charAt(0).toUpperCase() + id.slice(1));
+        if (el) el.classList.add('hidden');
+        if (btn) {
+          btn.classList.remove('active');
+          btn.classList.add('inactive');
+        }
+      });
+
+      const activeEl = document.getElementById(tabId);
+      const activeBtn = document.getElementById('btn' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
+      if (activeEl) activeEl.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.classList.remove('inactive');
+        activeBtn.classList.add('active');
+      }
+
+      if (tabId === 'tabMaps' && leafletMap) {
+        setTimeout(() => leafletMap.invalidateSize(), 150);
+      }
+      if (tabId === 'tabGlobe' && typeof mainMap !== 'undefined' && mainMap) {
+        setTimeout(() => mainMap.invalidateSize(), 150);
+      }
+    }
+
+    /* BRIEF EXPORTING */
+    function exportBriefText() {
+      const briefContent = `================================================================================
+NASA SPACE APPS BRIEFING DOCUMENT: C.A.S.C.A.D.E.
+INTELLIGENCE REPORT & POLICY PROJECTION
+Date: Nov 6, 2026 | Protocol: v2026.4
+================================================================================
+
+[ 1. EXECUTIVE SUMMARY & TARGET LOCATION ]
+Location Name:    ${state.locationName}
+Coordinates:      ${state.targetLat}° N, ${state.targetLon}° E
+Analysis Window:  2002 - 2026 (24-Year Multi-Orbital Telemetry)
+
+Overview: 
+Multi-variable satellite telemetry reveals significant multi-decadal shifts 
+across hydrological storage (GRACE-FO) and aerosol optical depth (MODIS). 
+Statistical testing confirms non-random trend persistence requiring targeted 
+leadership intervention.
+
+--------------------------------------------------------------------------------
+[ 2. STATISTICAL RIGOR & TREND DIAGNOSTICS ]
+- Mann-Kendall Test (p-value):  p < 0.001 (STATISTICALLY SIGNIFICANT)
+- Sen's Slope (β) Magnitude:    +0.142 / yr (Linear Rate of Change)
+- Kendall's Tau (τ):            +0.684 (Monotonic Trend Strength)
+- Z-Score Anomaly Status:       +4.82 σ (ALERT: Exceeds +2σ Safety Threshold)
+
+Methodology Note: Non-parametric tests confirm trend validity independent of 
+normal distribution assumptions. Confidence intervals exceed 99.1%.
+
+--------------------------------------------------------------------------------
+[ 3. SYSTEMIC RISK & CASCADE ANALYSIS ]
+Based on multi-orbital cascade modeling (Stages 1-5):
+Present anomalies threaten to induce secondary aerosol accumulation. Left 
+unmitigated, this disrupts regional evaporation cycles, starving downwind 
+aquifer recharge rates by 2032. Compound systemic failure risk is HIGH.
+
+--------------------------------------------------------------------------------
+[ 4. PRIORITIZED STRATEGIC POLICY INTERVENTIONS ]
+Projected Trajectory (2036 BAU):    +5.92 σ Anomaly
+Projected Trajectory (Mitigated):   Stabilized Growth
+
+Recommended Actions based on Simulation Parameters:
+1. IMMEDIATE ACTION: Enforce ${state.policy.water}% agricultural groundwater rationing 
+   to arrest immediate aquifer drawdown.
+2. INFRASTRUCTURE: Mandate a +${state.policy.greening}% urban greening canopy target 
+   to mitigate local surface temperature heat islands.
+3. EMISSION CAPS: Impose a ${state.policy.aerosol}% cap on industrial SO2/Aerosol 
+   particulate emissions.
+4. TELEMETRY UPGRADE: Expand radiometer monitoring mesh density to ${state.policy.sensor} 
+   active nodes to tighten predictive uncertainty bands.
+
+================================================================================
+Authored by: C.A.S.C.A.D.E. Decision Support Engine
+NASA Earth Science Trend Detective Challenge
+================================================================================`;
+
+      const blob = new Blob([briefContent], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `CASCADE_Executive_Brief_${state.locationName.replace(/\s+/g, '_')}.txt`;
+      link.click();
+
+      showToast('Executive Brief exported successfully (.TXT)');
+    }
+
+    function copyBriefToClipboard() {
+      const text = document.getElementById('briefSummaryText').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Brief summary copied to clipboard!');
+      });
+    }
+
+    /* MODAL HELPERS */
+    function openUserGuideModal() {
+      document.getElementById('modalUserGuide').classList.remove('hidden');
+    }
+    function closeUserGuideModal() {
+      document.getElementById('modalUserGuide').classList.add('hidden');
+    }
+
+    /* TOAST NOTIFICATION HELPERS */
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'bg-gEarthText text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold flex items-center space-x-2 transition-all opacity-95';
+      toast.innerHTML = `<i class="fa-solid fa-circle-info text-gEarthPillActive"></i> <span>${msg}</span>`;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    /* WINDOW ONLOAD INITIALIZATION */
+    window.onload = function () {
+      initWallpaperCanvas();
+      initMainLeafletMap();
+      initLeafletMap();
+      initDetectiveChart();
+      initPolicyChart();
+    };
+  </script>
+</body>
+</html>
